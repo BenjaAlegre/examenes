@@ -1,43 +1,130 @@
 const API = 'https://bootcamp-2024-2d43236510d5.herokuapp.com'
+let dataAlumnos;
+let dataExamenes;
+let dataPreguntas;
 
+let alumnos;
 
 const getPosts = async () => {
     try {
-        
+        const respAlum = await fetch(`${API}/alumnos`);
+        const respExa = await fetch(`${API}/examenes`);
+        const respResp = await fetch(`${API}/respuestas`);
 
-        const respAlum = await fetch(`${API}/alumnos`)
-
-        console.log(respAlum);
-
-       // const data = await respAlum.json();
-
-        //console.log(data);  
-
-        const respExa = (await fetch(`${API}/examenes`))
-
-        console.log(respExa);
-
-        const respResp = await fetch(`${API}/respuestas`)
-
-        const promises = [respAlum, respExa, respResp]
-
-        console.log(promises);
-        
+        const promises = [respAlum, respExa, respResp];
         const promisesJson = promises.map(result => result.json());
 
         console.log(promisesJson);
+
         const datos = await Promise.all(promisesJson);
 
-        const promesas = await Promise.all()
         console.log(datos);
 
-        //mostrarPosts(pokemons);
+        return datos;
     }
-    catch(error){
+    catch (error) {
         console.log(error);
     }
 }
 
+const getData = async () =>
+{
+    try{
+        let data = await getPosts();
+
+        dataAlumnos = data[0];
+        dataExamenes = data[1];
+        dataPreguntas = data[2];
+
+        sacarDatosAlumno();
+        sacarDatosExamen(0);
+    }
+    catch(err){
+        console.log(err);
+    }
+    
+
+}
+
+const sacarDatosExamen = (idAlumno) => {
+    let respuestas = dataPreguntas.data.filter(respuesta => respuesta.idAlumno == alumnos[idAlumno].id);
+    let examenesResp = corregirExamen(respuestas); 
+    for (let i = 0; i < examenesResp.length; i++) {
+        console.log("Puntaje:" + obtenerPuntaje(examenesResp[i]))
+        
+    }
+   
+}
+
+const corregirExamen = (respuestas) => {
+
+//let examenes = dataExamenes.data.filter(examenes => examenes.id == alumnos[idAlumno].id)
+    let resultado;
+    const misExamenes = []
+    for (let i = 0; i < dataExamenes.data.length; i++) {
+        const unExamen = []
+        for (let j = 0; j < respuestas.length; j++) {
+            
+            if (dataExamenes.data[i].id  === respuestas[j].idExamen) {
+                unExamen.push(respuestas[j]);
+            }
+            
+        }
+        misExamenes.push(unExamen);
+    }
+    return misExamenes;
+}
+
+const obtenerPuntaje = (examenResp) =>
+{  
+    const examen = dataExamenes.data.filter((examen) => examen.id == examenResp[0].idExamen);
+    const valorDeUnPunto = 10/ examenResp.length;
+    let puntaje = 0;
+    console.log(valorDeUnPunto);
+    for (let i = 0; i < examen[0].preguntas.length; i++) {
+        console.log(examen[0].preguntas[i].id);
+        console.log(examenResp[i].idPregunta);
+        if(examen[0].preguntas[i].id == examenResp[i].idPregunta){
+           
+            for (let j = 0; j < examen[0].preguntas[i].opciones.length; j++) {
+                const respuesta = examen[0].preguntas[i].opciones[j]
+               
+                if (respuesta.esCorrecta) {
+                    if (respuesta.id == examenResp[i].idRespuesta){
+                        puntaje += valorDeUnPunto;
+                        console.log("biens");
+                    } 
+                }
+            }
+        }
+        
+    }
+    return puntaje;
+}
+
+
+const sacarDatosAlumno = () => {
+
+    alumnos = dataAlumnos.data.map(alumno => {
+        return {
+        id: alumno.id,
+          nombre: alumno.nombre,
+          apellido: alumno.apellido,
+          edad: alumno.edad,
+          respuestas: [],
+          examen: []
+        };
+    })
+    
+    console.log(alumnos);
+   
+}
+
+const cargarDatosExamen = () => {
+    console.log(object);
+}
+
+getData();
 
 const getPostPoke = async () => {
     try {
@@ -114,4 +201,3 @@ document.getElementById('next').addEventListener('click', () => {
     getPosts();
 });
     
-getPosts();
